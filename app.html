@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nasha Enterprise · Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<!--
+  NASHA ENTERPRISE — redesigned logged-in app (DRAFT / static preview).
+  This is a UI shell built from the scraped ASP.NET pages. Menu items and
+  form fields mirror the live app (SingleTransaction.aspx field names kept:
+  ddlTransType, txtVouchNo, txtTransDate, ddlTransMode, txtAmount, etc.) so
+  each view can be mapped onto its real .aspx. Figures shown are placeholders.
+-->
+<style>
+  :root{
+    --brand:#0a7ea4; --brand-600:#0b6f92; --brand-700:#075a77;
+    --navy:#0a1f33; --navy-2:#0c2a45;
+    --teal:#2dd4bf; --teal-2:#5eead4;
+    --ink:#0f1a24; --ink-soft:#5b6b7b; --ink-faint:#93a1af;
+    --line:#e6ebf1; --line-2:#eef2f7;
+    --bg:#f1f5f9; --card:#ffffff; --field:#f7f9fb;
+    --danger:#e02d3c; --danger-soft:#fef2f3;
+    --ok:#0f9d76; --ok-soft:#e7f7f1;
+    --warn:#c07d10; --warn-soft:#fdf5e6;
+    --sidebar:#0b2136; --sidebar-2:#0e2a44;
+    --r:14px;
+    --shadow-sm:0 1px 2px rgba(7,27,46,.05),0 4px 12px -6px rgba(7,27,46,.14);
+    --shadow:0 1px 2px rgba(7,27,46,.05),0 12px 30px -14px rgba(7,27,46,.24);
+    --sb-w:264px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  a{color:inherit;text-decoration:none}
+  .app{display:grid;grid-template-columns:var(--sb-w) 1fr;min-height:100vh}
+
+  /* ================= Sidebar ================= */
+  .sidebar{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#0b2136 0%, #0a1c2e 100%);
+    color:#cddae6;display:flex;flex-direction:column;
+    border-right:1px solid rgba(255,255,255,.06);
+    scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent;
+  }
+  .sidebar::-webkit-scrollbar{width:8px}
+  .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:8px}
+  .sb-brand{
+    display:flex;align-items:center;gap:12px;padding:20px 20px;
+    border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;
+    background:linear-gradient(180deg,#0b2136,#0b2136 70%,rgba(11,33,54,.6));z-index:2;
+  }
+  .sb-mono{
+    width:40px;height:40px;border-radius:11px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(140deg,var(--teal),var(--brand));
+    box-shadow:0 8px 18px -6px rgba(45,212,191,.5),inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .sb-mono svg{width:22px;height:22px}
+  .sb-brand .txt b{font-family:'Sora',sans-serif;display:block;color:#fff;font-size:.92rem;letter-spacing:.02em;line-height:1.1}
+  .sb-brand .txt span{display:block;font-size:.6rem;letter-spacing:.34em;color:var(--teal-2);margin-top:3px;text-transform:uppercase}
+
+  .sb-nav{padding:12px 12px 24px;flex:1}
+  .sb-section{font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:#61788f;margin:16px 12px 6px;font-weight:700}
+  .nav-item{border-radius:10px;overflow:hidden}
+  .nav-link{
+    display:flex;align-items:center;gap:12px;width:100%;
+    padding:10px 12px;border:none;background:none;color:#c2d1de;
+    font:inherit;font-size:.875rem;font-weight:500;cursor:pointer;border-radius:10px;
+    transition:background .15s,color .15s;text-align:left;
+  }
+  .nav-link:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav-link .ico{width:19px;height:19px;flex:none;stroke:currentColor;opacity:.85}
+  .nav-link .label{flex:1}
+  .nav-link .chev{width:15px;height:15px;transition:transform .18s;opacity:.6}
+  .nav-item.open > .nav-link .chev{transform:rotate(90deg)}
+  .nav-link.active{background:linear-gradient(135deg,rgba(10,126,164,.9),rgba(45,212,191,.55));color:#fff;box-shadow:0 6px 16px -8px rgba(45,212,191,.6)}
+
+  .submenu{display:none;padding:2px 0 6px 12px;margin-left:16px;border-left:1px solid rgba(255,255,255,.09)}
+  .nav-item.open > .submenu{display:block}
+  .sub-link{
+    display:block;padding:8px 12px;border-radius:8px;color:#9fb3c6;
+    font-size:.82rem;cursor:pointer;transition:.15s;
+  }
+  .sub-link:hover{background:rgba(255,255,255,.06);color:#fff}
+  .sub-link.active{background:rgba(45,212,191,.14);color:var(--teal-2);font-weight:600}
+
+  .sb-foot{padding:14px 18px;border-top:1px solid rgba(255,255,255,.07);font-size:.72rem;color:#6f869a}
+
+  /* ================= Main ================= */
+  .main{min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    display:flex;align-items:center;gap:16px;
+    padding:14px 26px;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .hamb{display:none;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;place-items:center}
+  .hamb svg{width:20px;height:20px;stroke:var(--ink-soft)}
+  .crumb{display:flex;flex-direction:column}
+  .crumb .b1{font-size:.72rem;color:var(--ink-faint);font-weight:600;letter-spacing:.02em}
+  .crumb .b2{font-family:'Sora',sans-serif;font-size:1.06rem;font-weight:700;line-height:1.15}
+  .top-spacer{flex:1}
+  .top-tool{
+    height:40px;min-width:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:#fff;
+    display:inline-flex;align-items:center;gap:8px;color:var(--ink-soft);font-size:.83rem;font-weight:500;cursor:pointer;
+    transition:.15s;
+  }
+  .top-tool:hover{border-color:#d3dbe4;color:var(--ink)}
+  .top-tool svg{width:18px;height:18px;stroke:currentColor}
+  .top-tool .dot{position:absolute;margin:-14px 0 0 6px;width:7px;height:7px;background:var(--danger);border-radius:50%;border:2px solid #fff}
+  .clock{color:var(--ink-soft);font-size:.82rem;font-weight:600}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:5px 6px 5px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer}
+  .user-chip:hover{border-color:#d3dbe4}
+  .user-chip .nm{font-size:.82rem;font-weight:600;line-height:1.1}
+  .user-chip .rl{font-size:.68rem;color:var(--ink-faint)}
+  .avatar{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:.8rem;background:linear-gradient(140deg,var(--brand),var(--teal))}
+
+  .content{padding:26px;max-width:1240px;width:100%;margin:0 auto}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* page header */
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  .page-head h1{font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+  .page-head p{color:var(--ink-soft);font-size:.9rem;margin-top:4px}
+  .page-actions{display:flex;gap:10px}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:10px;font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;border:1px solid transparent;transition:.15s}
+  .btn svg{width:17px;height:17px;stroke:currentColor}
+  .btn-primary{background:linear-gradient(135deg,var(--brand),#0f9bbf);color:#fff;box-shadow:0 10px 22px -12px rgba(10,126,164,.8)}
+  .btn-primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  .btn-ghost{background:#fff;border-color:var(--line);color:var(--ink-soft)}
+  .btn-ghost:hover{border-color:#d3dbe4;color:var(--ink)}
+
+  /* stat cards */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+  .stat .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;margin-bottom:14px}
+  .stat .ic svg{width:20px;height:20px}
+  .stat .lbl{font-size:.78rem;color:var(--ink-soft);font-weight:600}
+  .stat .val{font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:700;margin-top:3px;letter-spacing:-.01em}
+  .stat .delta{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:600;margin-top:8px}
+  .delta.up{color:var(--ok)} .delta.down{color:var(--danger)}
+  .ic.blue{background:rgba(10,126,164,.1);color:var(--brand)}
+  .ic.teal{background:rgba(45,212,191,.16);color:#0e9e8e}
+  .ic.green{background:var(--ok-soft);color:var(--ok)}
+  .ic.amber{background:var(--warn-soft);color:var(--warn)}
+
+  .grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm)}
+  .card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line-2)}
+  .card-head h3{font-size:.98rem;font-weight:700}
+  .card-head a{font-size:.8rem;color:var(--brand);font-weight:600}
+  .card-body{padding:16px 18px}
+
+  /* table */
+  .tbl{width:100%;border-collapse:collapse;font-size:.85rem}
+  .tbl th{text-align:left;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:11px 12px;border-bottom:1px solid var(--line-2)}
+  .tbl tbody tr:last-child td,.tbl tr:last-child td{border-bottom:none}
+  .tbl tbody tr:hover{background:var(--field)}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:.73rem;font-weight:600}
+  .pill.pay{background:var(--danger-soft);color:var(--danger)}
+  .pill.rec{background:var(--ok-soft);color:var(--ok)}
+  .pill.jr{background:rgba(10,126,164,.1);color:var(--brand)}
+
+  /* quick actions */
+  .qa{display:grid;gap:10px}
+  .qa a{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:#fff;transition:.15s;cursor:pointer}
+  .qa a:hover{border-color:var(--brand);background:var(--field);transform:translateX(2px)}
+  .qa .qa-ic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:rgba(10,126,164,.09);color:var(--brand);flex:none}
+  .qa .qa-ic svg{width:18px;height:18px}
+  .qa .qa-tx b{display:block;font-size:.86rem}
+  .qa .qa-tx span{font-size:.76rem;color:var(--ink-soft)}
+
+  /* forms */
+  .form-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden}
+  .form-sec{padding:20px 22px}
+  .form-sec + .form-sec{border-top:1px solid var(--line-2)}
+  .form-sec h4{font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--brand-700);margin-bottom:16px;font-weight:700}
+  .fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .fg{display:flex;flex-direction:column;gap:7px}
+  .fg.col2{grid-column:span 2}
+  .fg label{font-size:.8rem;font-weight:600}
+  .fg label .req{color:var(--danger)}
+  .fg input,.fg select,.fg textarea{
+    height:46px;padding:0 13px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:.9rem;
+    background:var(--field);color:var(--ink);transition:.15s;width:100%;
+  }
+  .fg textarea{height:auto;padding:11px 13px;resize:vertical;min-height:72px}
+  .fg select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235b6b7b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+  .fg input:hover,.fg select:hover{border-color:#d3dbe4}
+  .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;background:#fff;border-color:var(--brand);box-shadow:0 0 0 4px rgba(10,126,164,.12)}
+  .fg input[readonly]{background:#eef2f7;color:var(--ink-soft);cursor:not-allowed}
+  .fg .hint{font-size:.74rem;color:var(--ink-faint)}
+  .form-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;background:var(--field);border-top:1px solid var(--line-2)}
+  .amount-in{position:relative}
+  .amount-in span{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-weight:600}
+  .amount-in input{padding-left:28px;font-variant-numeric:tabular-nums;font-weight:600}
+
+  /* report filter bar */
+  .filter-bar{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow-sm);margin-bottom:18px}
+  .filter-bar .fg{min-width:170px}
+  .report-total{display:flex;gap:24px;flex-wrap:wrap;margin-top:16px;padding:16px 18px;background:var(--field);border-radius:12px}
+  .report-total div span{display:block;font-size:.74rem;color:var(--ink-soft);font-weight:600}
+  .report-total div b{font-family:'Sora',sans-serif;font-size:1.15rem}
+
+  /* placeholder view */
+  .placeholder{background:var(--card);border:1px dashed #cfd9e4;border-radius:var(--r);padding:54px 30px;text-align:center;color:var(--ink-soft)}
+  .placeholder .pic{width:64px;height:64px;border-radius:16px;margin:0 auto 18px;display:grid;place-items:center;background:rgba(10,126,164,.08);color:var(--brand)}
+  .placeholder h3{font-family:'Sora',sans-serif;font-size:1.15rem;color:var(--ink);margin-bottom:8px}
+  .placeholder p{max-width:44ch;margin:0 auto;font-size:.9rem}
+
+  /* scrim for mobile drawer */
+  .scrim{display:none;position:fixed;inset:0;background:rgba(7,27,46,.45);z-index:29}
+
+  /* ================= Responsive ================= */
+  @media (max-width:1100px){ .stats{grid-template-columns:repeat(2,1fr)} .grid-2{grid-template-columns:1fr} }
+  @media (max-width:920px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:fixed;left:0;top:0;z-index:30;width:var(--sb-w);transform:translateX(-100%);transition:transform .25s}
+    .sidebar.open{transform:none;box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+    .hamb{display:grid}
+    .scrim.show{display:block}
+    .fgrid{grid-template-columns:1fr 1fr}
+    .user-chip .who{display:none}
+  }
+  @media (max-width:600px){
+    .content{padding:18px}
+    .fgrid{grid-template-columns:1fr}
+    .fg.col2{grid-column:span 1}
+    .clock,.top-tool.notif{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+
+<div class="scrim" id="scrim"></div>
+<div class="app">
+
+  <!-- ================= Sidebar ================= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="sb-mono"><svg viewBox="0 0 24 24" fill="none"><path d="M5 19V5l14 14V5" stroke="#04121f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="txt"><b>NASHA ENTERPRISE</b><span>Limited</span></div>
+    </div>
+
+    <nav class="sb-nav" id="nav">
+      <div class="nav-item">
+        <button class="nav-link active" data-view="dashboard">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          <span class="label">Home</span>
+        </button>
+      </div>
+
+      <div class="sb-section">Accounts</div>
+
+      <div class="nav-item">
+        <button class="nav-link" data-toggle>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="label">Account Inputs</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </button>
+        <div class="submenu">
+          <a class="sub-link" data-view="single-txn">Single Voucher — Entry</a>
+          <a class="sub-link" data-view="ph" data-title="Single Voucher — Edit">Single Voucher — Edit</a>
+          <a class="sub-link" data-view="ph" data-title="Multiple Voucher — Entry">Multiple Voucher — Entry</a>
+          <a class="sub-link" data-view="ph" data-title="Chart of Accounts — Entry">Chart of Accounts — Entry</a>
+          <a class="sub-link" data-view="ph" data-title="Opening Balance Entry">Opening Balance Entry</a>
+          <a class="sub-link" data-view="ph" data-title="Process">Process</a>
+        </div>
+      </div>
+
+      <div class="nav-item">
+        <button class="nav-link" data-toggle>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v4H4zM4 12h10v8H4zM18 12h2v8h-2z"/></svg>
+          <span class="label">Account Report</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </button>
+        <div class="submenu">
+          <a class="sub-link" data-view="cash-book">Cash Book</a>
+          <a class="sub-link" data-view="ph" data-title="Bank Book">Bank Book</a>
+          <a class="sub-link" data-view="ph" data-title="Ledger Book">Ledger Book</a>
+          <a class="sub-link" data-view="ph" data-title="Receipt-Payment (All)">Receipt-Payment (All)</a>
+          <a class="sub-link" data-view="ph" data-title="Receipt-Payment (Selected)">Receipt-Payment (Selected)</a>
+          <a class="sub-link" data-view="ph" data-title="Receipt-Payment (Details)">Receipt-Payment (Details)</a>
+          <a class="sub-link" data-view="ph" data-title="Trial Balance">Trial Balance</a>
+          <a class="sub-link" data-view="ph" data-title="Trial Balance Details">Trial Balance Details</a>
+          <a class="sub-link" data-view="ph" data-title="Income Statement">Income Statement</a>
+          <a class="sub-link" data-view="ph" data-title="Balance Sheet">Balance Sheet</a>
+          <a class="sub-link" data-view="ph" data-title="Notes to the Accounts">Notes to the Accounts</a>
+          <a class="sub-link" data-view="ph" data-title="Transaction Listing">Transaction Listing</a>
+          <a class="sub-link" data-view="ph" data-title="Chart of Accounts">Chart of Accounts</a>
+        </div>
+      </div>
+
+      <div class="sb-section">Clearing &amp; Forwarding</div>
+
+      <div class="nav-item">
+        <button class="nav-link" data-toggle>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13v10H3zM16 10h3l2 3v4h-5"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+          <span class="label">C&amp;F Inputs</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </button>
+        <div class="submenu">
+          <a class="sub-link" data-view="ph" data-title="Job Information">Job Information</a>
+          <a class="sub-link" data-view="ph" data-title="Job Receive">Job Receive</a>
+          <a class="sub-link" data-view="ph" data-title="Job Expense Extend">Job Expense Extend</a>
+          <a class="sub-link" data-view="ph" data-title="Job Bill Information">Job Bill Information</a>
+          <a class="sub-link" data-view="ph" data-title="Expense Information">Expense Information</a>
+          <a class="sub-link" data-view="ph" data-title="Party Information">Party Information</a>
+          <a class="sub-link" data-view="ph" data-title="Commission Information">Commission Information</a>
+        </div>
+      </div>
+
+      <div class="nav-item">
+        <button class="nav-link" data-toggle>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+          <span class="label">C&amp;F Reports</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </button>
+        <div class="submenu">
+          <a class="sub-link" data-view="ph" data-title="Job Register">Job Register</a>
+          <a class="sub-link" data-view="ph" data-title="Job Register — Date Wise">Job Register — Date Wise</a>
+          <a class="sub-link" data-view="ph" data-title="Job Register — Party Wise">Job Register — Party Wise</a>
+          <a class="sub-link" data-view="ph" data-title="Bill Forwarding — Import">Bill Forwarding — Import</a>
+          <a class="sub-link" data-view="ph" data-title="Bill Forwarding — Export">Bill Forwarding — Export</a>
+          <a class="sub-link" data-view="ph" data-title="Job Wise Bill Status">Job Wise Bill Status</a>
+          <a class="sub-link" data-view="ph" data-title="Party Wise Bill Status">Party Wise Bill Status</a>
+          <a class="sub-link" data-view="ph" data-title="All Party Information">All Party Information</a>
+          <a class="sub-link" data-view="ph" data-title="Expense List">Expense List</a>
+        </div>
+      </div>
+
+      <div class="sb-section">Administration</div>
+
+      <div class="nav-item">
+        <button class="nav-link" data-toggle>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <span class="label">User Information</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+        </button>
+        <div class="submenu">
+          <a class="sub-link" data-view="ph" data-title="All User Information">All User Information</a>
+          <a class="sub-link" data-view="ph" data-title="Menu Role">Menu Role</a>
+          <a class="sub-link" data-view="ph" data-title="Create User">Create User</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sb-foot">Signed in as <b style="color:#dce8f2">Md Jakir Hossain Rana</b><br>Role · AS: C&amp;F</div>
+  </aside>
+
+  <!-- ================= Main ================= -->
+  <div class="main">
+    <header class="topbar">
+      <button class="hamb" id="hamb"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="crumb">
+        <span class="b1" id="crumb-top">DASHBOARD</span>
+        <span class="b2" id="crumb-main">Overview</span>
+      </div>
+      <div class="top-spacer"></div>
+      <span class="clock" id="clock">—</span>
+      <button class="top-tool notif" title="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></button>
+      <div class="user-chip">
+        <div class="who" style="text-align:right"><div class="nm">Md Jakir Hossain Rana</div><div class="rl">AS: C&amp;F</div></div>
+        <div class="avatar">JH</div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ========== Dashboard ========== -->
+      <section class="view active" id="view-dashboard">
+        <div class="page-head">
+          <div>
+            <h1>Good day, Jakir 👋</h1>
+            <p>Here's what's happening across Nasha Enterprise today.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export</button>
+            <button class="btn btn-primary js-go" data-view="single-txn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Voucher</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="ic blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div>
+            <div class="lbl">Cash Balance</div>
+            <div class="val">৳ 12,84,500</div>
+            <div class="delta up">▲ 4.2% vs last week</div>
+          </div>
+          <div class="stat">
+            <div class="ic teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg></div>
+            <div class="lbl">Bank Balance</div>
+            <div class="val">৳ 48,20,000</div>
+            <div class="delta up">▲ 1.8% vs last week</div>
+          </div>
+          <div class="stat">
+            <div class="ic green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>
+            <div class="lbl">Today's Receipts</div>
+            <div class="val">৳ 3,15,000</div>
+            <div class="delta up">6 vouchers</div>
+          </div>
+          <div class="stat">
+            <div class="ic amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
+            <div class="lbl">Today's Payments</div>
+            <div class="val">৳ 1,92,300</div>
+            <div class="delta down">9 vouchers</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>Recent Transactions</h3><a class="js-go" data-view="cash-book">View all</a></div>
+            <div class="card-body" style="padding:0">
+              <table class="tbl">
+                <thead><tr><th>Voucher</th><th>Type</th><th>Particulars</th><th>Mode</th><th class="num">Amount</th></tr></thead>
+                <tbody>
+                  <tr><td>PV-1042</td><td><span class="pill pay">Payment</span></td><td>Chittagong Port Authority — bill</td><td>A/C Payee Cheque</td><td class="num">৳ 84,500</td></tr>
+                  <tr><td>RV-0781</td><td><span class="pill rec">Receipt</span></td><td>M/S Rahman Traders — advance</td><td>Online Transfer</td><td class="num">৳ 1,50,000</td></tr>
+                  <tr><td>PV-1041</td><td><span class="pill pay">Payment</span></td><td>C&amp;F labour handling</td><td>Cash</td><td class="num">৳ 22,300</td></tr>
+                  <tr><td>JV-0310</td><td><span class="pill jr">Journal</span></td><td>Depreciation — July</td><td>—</td><td class="num">৳ 18,000</td></tr>
+                  <tr><td>RV-0780</td><td><span class="pill rec">Receipt</span></td><td>Nasha Textiles Ltd — job payment</td><td>Pay Order</td><td class="num">৳ 1,65,000</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Quick Actions</h3></div>
+            <div class="card-body">
+              <div class="qa">
+                <a class="js-go" data-view="single-txn"><span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="qa-tx"><b>Single Voucher Entry</b><span>Record a payment, receipt or journal</span></span></a>
+                <a class="js-go" data-view="ph" data-title="Multiple Voucher — Entry"><span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4"/><rect x="3" y="10" width="18" height="4"/><rect x="3" y="16" width="18" height="4"/></svg></span><span class="qa-tx"><b>Multiple Voucher Entry</b><span>Batch several vouchers at once</span></span></a>
+                <a class="js-go" data-view="cash-book"><span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8"/></svg></span><span class="qa-tx"><b>Cash Book</b><span>Daily cash receipts &amp; payments</span></span></a>
+                <a class="js-go" data-view="ph" data-title="Trial Balance"><span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l7-5 7 5M5 8v6a7 3 0 0 0 14 0V8"/></svg></span><span class="qa-tx"><b>Trial Balance</b><span>Check your books are balanced</span></span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== Single Transaction Entry ========== -->
+      <section class="view" id="view-single-txn">
+        <div class="page-head">
+          <div><h1>Single Transaction Entry</h1><p>Record a payment, receipt, journal or contra voucher.</p></div>
+        </div>
+
+        <form class="form-card" id="txnForm" onsubmit="return false">
+          <div class="form-sec">
+            <h4>Voucher details</h4>
+            <div class="fgrid">
+              <div class="fg">
+                <label>Transaction Type <span class="req">*</span></label>
+                <select id="ddlTransType" name="ddlTransType"><option>PAYMENT</option><option>RECEIPT</option><option>JOURNAL</option><option>CONTRA</option></select>
+              </div>
+              <div class="fg">
+                <label>Voucher No</label>
+                <input id="txtVouchNo" name="txtVouchNo" value="1" readonly>
+                <span class="hint">Auto-generated by the system</span>
+              </div>
+              <div class="fg">
+                <label>Transaction Date <span class="req">*</span></label>
+                <input id="txtTransDate" name="txtTransDate" type="date" value="2026-07-19">
+              </div>
+              <div class="fg">
+                <label>Month · Year</label>
+                <input id="txtTransYear" name="txtTransYear" value="JUL-26" readonly>
+              </div>
+              <div class="fg">
+                <label>Unit Name <span class="req">*</span></label>
+                <select id="ddlCostPool" name="ddlCostPool"><option>NASHA ENTERPRISE LTD</option></select>
+              </div>
+              <div class="fg">
+                <label>Transaction Mode <span class="req">*</span></label>
+                <select id="ddlTransMode" name="ddlTransMode"><option>CASH</option><option>CASH CHEQUE</option><option>A/C PAYEE CHEQUE</option><option>ONLINE TRANSFER</option><option>PAY ORDER</option><option>ATM</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-sec">
+            <h4>Debit &amp; credit</h4>
+            <div class="fgrid">
+              <div class="fg col2">
+                <label>Debit Account (Payment To) <span class="req">*</span></label>
+                <input id="txtCNDebitNm" name="txtCNDebitNm" placeholder="Search account name or code…" list="accts">
+              </div>
+              <div class="fg">
+                <label>Debit Amount</label>
+                <div class="amount-in"><span>৳</span><input id="txtDebited" name="txtDebited" inputmode="decimal" placeholder="0.00"></div>
+              </div>
+              <div class="fg col2">
+                <label>Credit Account (Payment From) <span class="req">*</span></label>
+                <input id="txtCNCreditNm" name="txtCNCreditNm" placeholder="Search account name or code…" list="accts">
+              </div>
+              <div class="fg">
+                <label>Credit Amount</label>
+                <div class="amount-in"><span>৳</span><input id="txtCredited" name="txtCredited" inputmode="decimal" placeholder="0.00"></div>
+              </div>
+            </div>
+            <datalist id="accts">
+              <option value="1010 · Cash in Hand"></option>
+              <option value="1020 · Bank — City Bank"></option>
+              <option value="2010 · Accounts Payable"></option>
+              <option value="4010 · C&amp;F Service Income"></option>
+              <option value="5010 · Port &amp; Handling Charges"></option>
+            </datalist>
+          </div>
+
+          <div class="form-sec">
+            <h4>Amount &amp; narration</h4>
+            <div class="fgrid">
+              <div class="fg">
+                <label>Total Amount <span class="req">*</span></label>
+                <div class="amount-in"><span>৳</span><input id="txtAmount" name="txtAmount" inputmode="decimal" placeholder="0.00"></div>
+              </div>
+              <div class="fg col2">
+                <label>Narration / Remarks</label>
+                <textarea placeholder="Describe this transaction…"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-foot">
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('txnForm').reset()">Reset</button>
+            <button type="button" class="btn btn-ghost">Save &amp; New</button>
+            <button type="button" class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Save Voucher</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ========== Cash Book report ========== -->
+      <section class="view" id="view-cash-book">
+        <div class="page-head">
+          <div><h1>Cash Book</h1><p>Daily cash receipts and payments with running balance.</p></div>
+          <div class="page-actions">
+            <button class="btn btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5h20v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print</button>
+            <button class="btn btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="fg"><label>From Date</label><input type="date" value="2026-07-01"></div>
+          <div class="fg"><label>To Date</label><input type="date" value="2026-07-19"></div>
+          <div class="fg"><label>Unit</label><select><option>NASHA ENTERPRISE LTD</option></select></div>
+          <div class="fg"><label>Cash Account</label><select><option>1010 · Cash in Hand</option><option>All cash accounts</option></select></div>
+          <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Show Report</button>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0;overflow-x:auto">
+            <table class="tbl" style="min-width:720px">
+              <thead><tr><th>Date</th><th>Voucher</th><th>Particulars</th><th class="num">Receipt (৳)</th><th class="num">Payment (৳)</th><th class="num">Balance (৳)</th></tr></thead>
+              <tbody>
+                <tr><td>01 Jul</td><td>—</td><td>Opening Balance</td><td class="num">—</td><td class="num">—</td><td class="num">10,50,000</td></tr>
+                <tr><td>03 Jul</td><td>RV-0771</td><td>Rahman Traders — advance</td><td class="num">1,50,000</td><td class="num">—</td><td class="num">12,00,000</td></tr>
+                <tr><td>05 Jul</td><td>PV-1030</td><td>Labour handling charges</td><td class="num">—</td><td class="num">22,300</td><td class="num">11,77,700</td></tr>
+                <tr><td>12 Jul</td><td>RV-0780</td><td>Nasha Textiles Ltd — job payment</td><td class="num">1,65,000</td><td class="num">—</td><td class="num">13,42,700</td></tr>
+                <tr><td>18 Jul</td><td>PV-1041</td><td>Office supplies</td><td class="num">—</td><td class="num">58,200</td><td class="num">12,84,500</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="report-total">
+          <div><span>Total Receipts</span><b style="color:var(--ok)">৳ 3,15,000</b></div>
+          <div><span>Total Payments</span><b style="color:var(--danger)">৳ 80,500</b></div>
+          <div><span>Closing Balance</span><b>৳ 12,84,500</b></div>
+        </div>
+      </section>
+
+      <!-- ========== Generic placeholder ========== -->
+      <section class="view" id="view-ph">
+        <div class="page-head"><div><h1 id="ph-title">Module</h1><p>This screen is part of the redesign roadmap.</p></div></div>
+        <div class="placeholder">
+          <div class="pic"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <h3 id="ph-title-2">Module</h3>
+          <p>The layout and controls for this screen will follow the same design system as the Dashboard, Voucher Entry and Cash Book you can already explore. Tell me which one to build out next.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  /* ---------- View switching ---------- */
+  const views = document.querySelectorAll('.view');
+  const crumbTop = document.getElementById('crumb-top');
+  const crumbMain = document.getElementById('crumb-main');
+  const groupOf = { 'dashboard':'DASHBOARD','single-txn':'ACCOUNT INPUTS','cash-book':'ACCOUNT REPORT' };
+  const nameOf  = { 'dashboard':'Overview','single-txn':'Single Transaction Entry','cash-book':'Cash Book' };
+
+  function show(view, title){
+    views.forEach(v=>v.classList.remove('active'));
+    const el = document.getElementById('view-'+view) || document.getElementById('view-ph');
+    el.classList.add('active');
+    if(view==='ph'){
+      document.getElementById('ph-title').textContent = title||'Module';
+      document.getElementById('ph-title-2').textContent = title||'Module';
+      crumbTop.textContent = 'MODULE'; crumbMain.textContent = title||'Module';
+    }else{
+      crumbTop.textContent = groupOf[view]||'PORTAL';
+      crumbMain.textContent = nameOf[view]||title||'';
+    }
+    window.scrollTo({top:0,behavior:'smooth'});
+    closeDrawer();
+  }
+
+  /* mark active nav link */
+  function setActiveLink(target){
+    document.querySelectorAll('.nav-link,.sub-link').forEach(l=>l.classList.remove('active'));
+    if(target) target.classList.add('active');
+  }
+
+  /* leaf links (top-level with data-view, and submenu links) */
+  document.querySelectorAll('[data-view]').forEach(el=>{
+    if(el.classList.contains('js-go')) return; // handled below
+    el.addEventListener('click', ()=>{
+      show(el.dataset.view, el.dataset.title);
+      if(el.classList.contains('nav-link')||el.classList.contains('sub-link')) setActiveLink(el);
+    });
+  });
+
+  /* in-page shortcut buttons */
+  document.querySelectorAll('.js-go').forEach(b=>{
+    b.addEventListener('click', ()=> show(b.dataset.view, b.dataset.title));
+  });
+
+  /* accordion groups */
+  document.querySelectorAll('[data-toggle]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const item = btn.closest('.nav-item');
+      const open = item.classList.contains('open');
+      document.querySelectorAll('.nav-item.open').forEach(i=>{ if(i!==item) i.classList.remove('open'); });
+      item.classList.toggle('open', !open);
+    });
+  });
+
+  /* ---------- Mobile drawer ---------- */
+  const sidebar=document.getElementById('sidebar'), scrim=document.getElementById('scrim');
+  function closeDrawer(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+  document.getElementById('hamb').addEventListener('click',()=>{ sidebar.classList.add('open'); scrim.classList.add('show'); });
+  scrim.addEventListener('click', closeDrawer);
+
+  /* ---------- Clock ---------- */
+  const clock=document.getElementById('clock');
+  function tick(){
+    const d=new Date();
+    const opt={weekday:'short',day:'2-digit',month:'short'};
+    clock.textContent = d.toLocaleDateString('en-GB',opt)+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }
+  tick(); setInterval(tick,30000);
+</script>
+
+</body>
+</html>

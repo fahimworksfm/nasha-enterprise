@@ -480,12 +480,10 @@
     submitBtn.classList.add('loading');
     document.getElementById('btn-label').textContent='Signing in…';
 
-    /* Draft-only reset so the preview stays interactive. */
-    setTimeout(()=>{
-      submitBtn.disabled=false;
-      submitBtn.classList.remove('loading');
-      document.getElementById('btn-label').textContent='Sign in';
-    },1500);
+    /* Draft-only: hand off to the redesigned app so the preview shows the
+       full flow. In production this line goes away and the real form POST
+       to "/" takes over. */
+    setTimeout(()=>{ window.location.href='app.html'; },1100);
   });
 </script>
 
