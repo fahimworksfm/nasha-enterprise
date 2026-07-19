@@ -3,35 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign in — Nasha Enterprise</title>
+<title>Sign in — Nasha Enterprise Limited</title>
+<!--
+  REDESIGNED LOGIN — drop-in for the existing ASP.NET WebForms backend.
+  Field names below match the live site exactly, so the server code needs no changes:
+    - form posts to the site root ("/")            action="/"  method="post"
+    - username field  name="txtUser"
+    - password field  name="txtPassword"
+    - remember box    name="checkRememebrMe"       (original spelling preserved)
+    - submit button   name="btnSubmit"  value="Sign in"
+    - hidden fields    txtIp, txtLotiLongTude, txtlink  (IP + geolocation capture)
+  To go live: (1) render this markup inside the .aspx page so ASP.NET injects
+  __VIEWSTATE / __EVENTVALIDATION into the .aspNetHidden div, (2) set the form
+  action back to "/", and (3) delete the e.preventDefault() line in the submit
+  handler (it is only there so this file previews nicely as a standalone draft).
+-->
 <style>
   :root {
-    --brand-900: #0d1b2a;
-    --brand-800: #12263f;
-    --brand-700: #1b3a5c;
-    --accent: #2e86de;
-    --accent-hover: #2472be;
-    --accent-soft: #eaf3fc;
-    --ink: #1f2937;
-    --ink-soft: #6b7280;
-    --line: #e5e7eb;
-    --bg: #f5f7fa;
-    --card: #ffffff;
-    --danger: #dc2626;
-    --danger-soft: #fef2f2;
-    --radius: 14px;
-    --shadow: 0 20px 45px -18px rgba(13, 27, 42, .28);
+    --brand:        #006999;   /* NASHA wordmark blue           */
+    --brand-dark:   #004b70;
+    --brand-deep:   #01324a;
+    --teal:         #49d0c3;   /* original panel accent         */
+    --teal-dark:    #2fb4a7;
+    --ink:          #1f2a37;
+    --ink-soft:     #667085;
+    --line:         #e4e8ee;
+    --bg:           #eef2f6;
+    --card:         #ffffff;
+    --danger:       #d92d20;
+    --danger-soft:  #fef3f2;
+    --radius:       14px;
+    --shadow:       0 24px 60px -24px rgba(1, 50, 74, .45);
     font-size: 16px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: var(--bg);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Open Sans", Arial, sans-serif;
     color: var(--ink);
+    background:
+      radial-gradient(900px 500px at 100% 0%, rgba(73,208,195,.16), transparent 60%),
+      radial-gradient(900px 600px at 0% 100%, rgba(0,105,153,.14), transparent 55%),
+      var(--bg);
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 24px;
@@ -40,297 +57,249 @@
   .shell {
     display: grid;
     grid-template-columns: 1.05fr 1fr;
-    width: min(980px, 100%);
-    min-height: 600px;
+    width: min(1000px, 100%);
+    min-height: 580px;
     background: var(--card);
     border-radius: calc(var(--radius) + 6px);
     overflow: hidden;
     box-shadow: var(--shadow);
   }
 
-  /* ---------- Brand panel ---------- */
+  /* ---------------- Brand panel ---------------- */
   .brand-panel {
     position: relative;
-    background:
-      radial-gradient(1200px 500px at -10% -20%, rgba(46, 134, 222, .35), transparent 60%),
-      radial-gradient(900px 600px at 120% 120%, rgba(46, 134, 222, .25), transparent 55%),
-      linear-gradient(155deg, var(--brand-900) 0%, var(--brand-800) 55%, var(--brand-700) 100%);
     color: #fff;
-    padding: 56px 48px;
+    padding: 52px 46px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    background:
+      radial-gradient(1000px 460px at -10% -10%, rgba(73,208,195,.42), transparent 60%),
+      linear-gradient(160deg, var(--brand) 0%, var(--brand-dark) 48%, var(--brand-deep) 100%);
   }
-
   .brand-panel::after {
     content: "";
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background-image:
-      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
-    background-size: 44px 44px;
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 46px 46px;
     pointer-events: none;
   }
-
   .brand-top { position: relative; z-index: 1; }
 
-  .logo-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 48px;
-  }
-
-  .logo-mark {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: linear-gradient(140deg, var(--accent), #6cb2f5);
-    display: grid;
-    place-items: center;
+  /* Wordmark — evokes the site's angular logo (custom "Dodgv2" font not
+     available, approximated with a wide, condensed uppercase treatment). */
+  .wordmark {
     font-weight: 800;
-    font-size: 1.25rem;
-    letter-spacing: .5px;
-    box-shadow: 0 8px 20px -6px rgba(46, 134, 222, .55);
+    letter-spacing: .14em;
+    line-height: 1.05;
+    font-size: 1.7rem;
+    transform: scaleX(1.06);
+    transform-origin: left;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 10px rgba(0,0,0,.18);
   }
-
-  .logo-name {
-    font-size: 1.15rem;
-    font-weight: 700;
-    letter-spacing: .3px;
-  }
-  .logo-name small {
+  .wordmark span { color: var(--teal); }
+  .wordmark small {
     display: block;
-    font-size: .72rem;
-    font-weight: 500;
-    color: rgba(255,255,255,.65);
-    letter-spacing: 1.6px;
-    text-transform: uppercase;
+    font-size: .95rem;
+    letter-spacing: .34em;
+    font-weight: 700;
+    color: rgba(255,255,255,.9);
+    transform: none;
     margin-top: 2px;
+  }
+  .role-chip {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 5px 12px;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    border-radius: 999px;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.22);
   }
 
   .brand-headline {
-    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    position: relative; z-index: 1;
+    font-size: clamp(1.4rem, 2.3vw, 1.9rem);
     font-weight: 700;
-    line-height: 1.3;
-    max-width: 22ch;
-    margin-bottom: 18px;
+    line-height: 1.32;
+    max-width: 20ch;
+    margin: 40px 0 16px;
   }
   .brand-sub {
-    color: rgba(255,255,255,.72);
+    position: relative; z-index: 1;
+    color: rgba(255,255,255,.78);
     line-height: 1.65;
-    max-width: 40ch;
-    font-size: .95rem;
+    max-width: 42ch;
+    font-size: .93rem;
   }
 
   .brand-points {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    gap: 14px;
-    margin-top: 40px;
+    position: relative; z-index: 1;
+    display: grid; gap: 13px;
+    margin-top: 30px;
   }
   .point {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: .9rem;
-    color: rgba(255,255,255,.85);
+    display: flex; align-items: center; gap: 12px;
+    font-size: .9rem; color: rgba(255,255,255,.9);
   }
   .point svg {
-    flex: none;
-    width: 20px;
-    height: 20px;
-    padding: 4px;
+    flex: none; width: 22px; height: 22px; padding: 4px;
     border-radius: 50%;
-    background: rgba(46, 134, 222, .28);
-    stroke: #9ecdf8;
+    background: rgba(73,208,195,.24);
+    stroke: var(--teal);
   }
 
-  .brand-foot {
-    position: relative;
-    z-index: 1;
-    font-size: .78rem;
-    color: rgba(255,255,255,.45);
-    margin-top: 40px;
-  }
-
-  /* ---------- Form panel ---------- */
+  /* ---------------- Form panel ---------------- */
   .form-panel {
-    padding: 56px 52px;
+    padding: 52px 50px;
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
-
-  .form-head { margin-bottom: 32px; }
-  .form-head h1 {
-    font-size: 1.55rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-  .form-head p {
-    color: var(--ink-soft);
-    font-size: .92rem;
-  }
+  .form-head { margin-bottom: 28px; }
+  .form-head h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 7px; }
+  .form-head p  { color: var(--ink-soft); font-size: .92rem; }
 
   .alert {
     display: none;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: flex-start; gap: 10px;
     background: var(--danger-soft);
-    border: 1px solid #fecaca;
+    border: 1px solid #fecdca;
     color: var(--danger);
     border-radius: 10px;
     padding: 12px 14px;
-    font-size: .86rem;
-    line-height: 1.45;
+    font-size: .86rem; line-height: 1.45;
     margin-bottom: 20px;
   }
   .alert.show { display: flex; }
   .alert svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
 
-  .field { margin-bottom: 20px; }
+  .field { margin-bottom: 18px; }
   .field label {
     display: block;
-    font-size: .84rem;
-    font-weight: 600;
+    font-size: .84rem; font-weight: 600;
     margin-bottom: 8px;
-    color: var(--ink);
   }
+  .field label .req { color: var(--danger); }
 
-  .control {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
+  .control { position: relative; display: flex; align-items: center; }
   .control > svg.lead {
-    position: absolute;
-    left: 14px;
-    width: 18px;
-    height: 18px;
-    stroke: #9ca3af;
-    pointer-events: none;
+    position: absolute; left: 14px; width: 18px; height: 18px;
+    stroke: #98a2b3; pointer-events: none;
   }
-  .control input {
-    width: 100%;
-    height: 48px;
+  .control input[type="text"],
+  .control input[type="email"],
+  .control input[type="password"] {
+    width: 100%; height: 48px;
     padding: 0 46px 0 44px;
     border: 1.5px solid var(--line);
     border-radius: 10px;
-    font-size: .95rem;
-    color: var(--ink);
+    font-size: .95rem; color: var(--ink);
     background: #fff;
     transition: border-color .15s, box-shadow .15s;
   }
-  .control input::placeholder { color: #b0b7c3; }
+  .control input::placeholder { color: #aab2bf; }
   .control input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px var(--accent-soft);
+    outline: none; border-color: var(--brand);
+    box-shadow: 0 0 0 4px rgba(0,105,153,.12);
   }
   .control input.invalid {
     border-color: var(--danger);
     box-shadow: 0 0 0 4px var(--danger-soft);
   }
-
   .toggle-pass {
-    position: absolute;
-    right: 6px;
-    width: 36px;
-    height: 36px;
-    display: grid;
-    place-items: center;
-    background: none;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    color: #9ca3af;
+    position: absolute; right: 6px;
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    background: none; border: none; border-radius: 8px;
+    cursor: pointer; color: #98a2b3;
   }
-  .toggle-pass:hover { background: #f3f4f6; color: var(--ink-soft); }
+  .toggle-pass:hover { background: #f2f4f7; color: var(--ink-soft); }
   .toggle-pass svg { width: 19px; height: 19px; }
 
   .row-between {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 26px;
-    font-size: .86rem;
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 6px 0 24px; font-size: .86rem;
   }
-
   .remember {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--ink-soft);
-    cursor: pointer;
-    user-select: none;
+    display: flex; align-items: center; gap: 8px;
+    color: var(--ink-soft); cursor: pointer; user-select: none;
   }
-  .remember input {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent);
-    cursor: pointer;
-  }
-
-  .link {
-    color: var(--accent);
-    text-decoration: none;
-    font-weight: 600;
-  }
+  .remember input { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; }
+  .link { color: var(--brand); text-decoration: none; font-weight: 600; }
   .link:hover { text-decoration: underline; }
 
   .btn-primary {
-    width: 100%;
-    height: 50px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(140deg, var(--accent), #4b9be6);
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: .2px;
+    width: 100%; height: 50px;
+    border: none; border-radius: 10px;
+    background: linear-gradient(135deg, var(--brand), var(--teal-dark));
+    color: #fff; font-size: 1rem; font-weight: 700; letter-spacing: .2px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: transform .12s, box-shadow .12s, filter .12s;
-    box-shadow: 0 10px 22px -8px rgba(46, 134, 222, .6);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .12s, filter .12s;
+    box-shadow: 0 12px 24px -10px rgba(0,105,153,.6);
   }
-  .btn-primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .btn-primary:hover  { filter: brightness(1.06); transform: translateY(-1px); }
   .btn-primary:active { transform: translateY(0); }
   .btn-primary[disabled] { opacity: .75; cursor: default; transform: none; }
-
   .spinner {
-    display: none;
-    width: 18px;
-    height: 18px;
-    border: 2.5px solid rgba(255,255,255,.4);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
+    display: none; width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff;
+    border-radius: 50%; animation: spin .7s linear infinite;
   }
   .btn-primary.loading .spinner { display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .form-foot {
-    margin-top: 30px;
-    padding-top: 22px;
+    margin-top: 26px; padding-top: 20px;
     border-top: 1px solid var(--line);
-    text-align: center;
-    font-size: .85rem;
-    color: var(--ink-soft);
+    text-align: center; font-size: .85rem; color: var(--ink-soft);
   }
 
-  /* ---------- Responsive ---------- */
-  @media (max-width: 820px) {
+  /* ---------------- Site footer (real content preserved) ---------------- */
+  .site-footer {
+    width: min(1000px, 100%);
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 28px;
+    padding: 22px 28px;
+    background: rgba(255,255,255,.6);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: .8rem; color: var(--ink-soft);
+    backdrop-filter: blur(4px);
+  }
+  .site-footer h4 {
+    font-size: .74rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--brand-dark); margin-bottom: 8px;
+  }
+  .site-footer p { line-height: 1.6; }
+  .footer-brand { text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 8px; }
+  .footer-brand .social { display: flex; gap: 10px; }
+  .footer-brand .social a {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: grid; place-items: center;
+    background: var(--brand); color: #fff; text-decoration: none;
+    font-weight: 700; font-size: .82rem;
+  }
+  .footer-brand .social a:hover { background: var(--brand-dark); }
+  .footer-brand .dev { display: flex; align-items: center; gap: 8px; }
+  .footer-brand .dev img { width: 26px; height: 22px; opacity: .9; }
+
+  /* ---------------- Responsive ---------------- */
+  @media (max-width: 860px) {
     .shell { grid-template-columns: 1fr; min-height: 0; }
-    .brand-panel { padding: 40px 32px; }
-    .brand-points, .brand-foot { display: none; }
-    .logo-row { margin-bottom: 28px; }
-    .form-panel { padding: 40px 32px 48px; }
+    .brand-panel { padding: 38px 30px; }
+    .brand-points { display: none; }
+    .form-panel { padding: 38px 30px 44px; }
+    .site-footer { grid-template-columns: 1fr; gap: 18px; text-align: left; }
+    .footer-brand { align-items: flex-start; text-align: left; }
   }
 </style>
 </head>
@@ -339,59 +308,67 @@
 <main class="shell">
 
   <!-- Left: brand -->
-  <section class="brand-panel" aria-hidden="true">
+  <section class="brand-panel">
     <div class="brand-top">
-      <div class="logo-row">
-        <div class="logo-mark">N</div>
-        <div class="logo-name">Nasha Enterprise<small>Business Portal</small></div>
-      </div>
-      <h2 class="brand-headline">Run your business from one place.</h2>
-      <p class="brand-sub">Sales, inventory, accounts and reporting — everything your team needs, behind a single secure sign-in.</p>
+      <div class="wordmark">NASHA <span>ENTERPRISE</span><small>LIMITED</small></div>
+      <span class="role-chip">CLEARING &amp; FORWARDING · ACCOUNTS</span>
+
+      <h2 class="brand-headline">Your accounts &amp; C&amp;F operations, in one portal.</h2>
+      <p class="brand-sub">Vouchers, ledgers, job registers and bill forwarding — everything Nasha Enterprise runs on, behind a single secure sign-in.</p>
 
       <div class="brand-points">
         <div class="point">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Real-time sales &amp; inventory tracking
+          Cash, bank &amp; ledger books with live trial balance
         </div>
         <div class="point">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Accounts, ledgers &amp; daily reports
+          Job registers &amp; import/export bill forwarding
         </div>
         <div class="point">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Role-based access for your whole team
+          Role-based access for accounts &amp; C&amp;F teams
         </div>
       </div>
     </div>
-    <div class="brand-foot">© 2026 Nasha Enterprise. All rights reserved.</div>
   </section>
 
-  <!-- Right: form -->
+  <!-- Right: sign-in form -->
   <section class="form-panel">
     <div class="form-head">
-      <h1>Welcome back</h1>
-      <p>Sign in to your account to continue.</p>
+      <h1>Sign in to your account</h1>
+      <p>Welcome back. Please enter your details to continue.</p>
     </div>
 
     <div class="alert" id="alert" role="alert">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span id="alert-text">Invalid email or password. Please try again.</span>
+      <span id="alert-text">Invalid username or password. Please try again.</span>
     </div>
 
-    <form id="login-form" method="post" action="#" novalidate>
+    <!-- action="/" in production; "#" here so the draft previews without posting -->
+    <form id="form1" method="post" action="#" novalidate>
+
+      <!-- ASP.NET renders __VIEWSTATE / __EVENTVALIDATION here on the server -->
+      <div class="aspNetHidden"></div>
+
+      <!-- Hidden capture fields carried over from the live page -->
+      <input type="hidden" name="txtIp"          id="txtIp">
+      <input type="hidden" name="txtLotiLongTude" id="txtLotiLongTude">
+      <input type="hidden" name="txtlink"        id="txtlink">
+
       <div class="field">
-        <label for="email">Email address</label>
+        <label for="txtUser">Username / Email <span class="req">*</span></label>
         <div class="control">
-          <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>
-          <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="username" required>
+          <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="txtUser" name="txtUser" placeholder="Enter your username or email" autocomplete="username" required>
         </div>
       </div>
 
       <div class="field">
-        <label for="password">Password</label>
+        <label for="txtPassword">Password <span class="req">*</span></label>
         <div class="control">
           <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-          <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+          <input type="password" id="txtPassword" name="txtPassword" placeholder="Enter your password" autocomplete="current-password" required>
           <button type="button" class="toggle-pass" id="toggle-pass" aria-label="Show password">
             <svg id="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
             <svg id="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -401,57 +378,95 @@
 
       <div class="row-between">
         <label class="remember">
-          <input type="checkbox" name="remember" id="remember">
-          Remember me
+          <input type="checkbox" id="checkRememebrMe" name="checkRememebrMe">
+          Remember my user name and password
         </label>
-        <a class="link" href="#">Forgot password?</a>
       </div>
 
-      <button type="submit" class="btn-primary" id="submit-btn">
+      <button type="submit" class="btn-primary" id="btnSubmit" name="btnSubmit" value="Sign in">
         <span class="spinner"></span>
         <span id="btn-label">Sign in</span>
       </button>
     </form>
 
     <div class="form-foot">
-      Need access? <a class="link" href="#">Contact your administrator</a>
+      Trouble signing in? <a class="link" href="mailto:nashactg@gmail.com">Contact the administrator</a>
     </div>
   </section>
 
 </main>
 
-<script>
-  const form = document.getElementById('login-form');
-  const email = document.getElementById('email');
-  const password = document.getElementById('password');
-  const alertBox = document.getElementById('alert');
-  const alertText = document.getElementById('alert-text');
-  const submitBtn = document.getElementById('submit-btn');
+<!-- Real footer content preserved from the live site -->
+<footer class="site-footer">
+  <div>
+    <h4>Corporate Office</h4>
+    <p>House-9, Road-6, Block-G, Boropool,<br>
+       Halishahar, Chattogram, Bangladesh.<br>
+       Phone: 031-2528516, 2520725<br>
+       Cell: 01816-025800, 01707-628954<br>
+       E-mail: nashactg@gmail.com</p>
+  </div>
+  <div>
+    <h4>Branch Office</h4>
+    <p>K.R. Complex (3rd Floor), Gate #9, Block #K,<br>
+       Halishahar, Chattogram, Bangladesh.<br>
+       Cell: 01713-628954, 01613-628954<br>
+       E-mail: nashactg@gmail.com</p>
+  </div>
+  <div class="footer-brand">
+    <div class="social">
+      <a href="https://www.facebook.com/AlchemySoftware/" target="_blank" rel="noopener" title="Facebook">f</a>
+      <a href="https://twitter.com/alchemybd" target="_blank" rel="noopener" title="Twitter">t</a>
+    </div>
+    <div class="dev">
+      <img alt="Alchemy Software" src="data:image/png;base64,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">
+      <span>Developed by <strong>Alchemy Software Ltd</strong></span>
+    </div>
+    <span>© 2026 Nasha Enterprise Limited</span>
+  </div>
+</footer>
 
-  // Show/hide password
-  const toggle = document.getElementById('toggle-pass');
-  const eyeOpen = document.getElementById('eye-open');
+<script>
+  const form      = document.getElementById('form1');
+  const user      = document.getElementById('txtUser');
+  const password  = document.getElementById('txtPassword');
+  const alertBox  = document.getElementById('alert');
+  const alertText = document.getElementById('alert-text');
+  const submitBtn = document.getElementById('btnSubmit');
+
+  /* Show / hide password */
+  const toggle    = document.getElementById('toggle-pass');
+  const eyeOpen   = document.getElementById('eye-open');
   const eyeClosed = document.getElementById('eye-closed');
   toggle.addEventListener('click', () => {
     const hidden = password.type === 'password';
     password.type = hidden ? 'text' : 'password';
-    eyeOpen.style.display = hidden ? 'none' : '';
+    eyeOpen.style.display   = hidden ? 'none' : '';
     eyeClosed.style.display = hidden ? '' : 'none';
     toggle.setAttribute('aria-label', hidden ? 'Hide password' : 'Show password');
   });
 
-  // Draft-only submit handling: validates inputs and shows the loading state.
-  // Wire `form.action` to the real authentication endpoint when integrating.
+  /* Geolocation capture — mirrors the live page: fills txtLotiLongTude so the
+     server records where the sign-in happened. Silently skipped if declined. */
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      p => { document.getElementById('txtLotiLongTude').value = p.coords.latitude + ',' + p.coords.longitude; },
+      () => {}, { timeout: 8000 }
+    );
+  }
+
+  /* Submit — validates, then shows the loading state.
+     PRODUCTION: delete the e.preventDefault() line so the form posts to "/". */
   form.addEventListener('submit', (e) => {
-    e.preventDefault();
+    e.preventDefault(); // <-- remove for live backend
     alertBox.classList.remove('show');
-    [email, password].forEach(el => el.classList.remove('invalid'));
+    [user, password].forEach(el => el.classList.remove('invalid'));
 
     let bad = false;
-    if (!email.value.trim() || !/^\S+@\S+\.\S+$/.test(email.value)) { email.classList.add('invalid'); bad = true; }
-    if (!password.value) { password.classList.add('invalid'); bad = true; }
+    if (!user.value.trim())     { user.classList.add('invalid'); bad = true; }
+    if (!password.value)        { password.classList.add('invalid'); bad = true; }
     if (bad) {
-      alertText.textContent = 'Please enter a valid email address and password.';
+      alertText.textContent = 'Please enter both your username and password.';
       alertBox.classList.add('show');
       return;
     }
@@ -460,7 +475,7 @@
     submitBtn.classList.add('loading');
     document.getElementById('btn-label').textContent = 'Signing in…';
 
-    // Placeholder: reset after a moment so the draft stays interactive.
+    /* Draft-only reset so the preview stays interactive. */
     setTimeout(() => {
       submitBtn.disabled = false;
       submitBtn.classList.remove('loading');
